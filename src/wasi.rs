@@ -2,7 +2,6 @@
 // `wasi-libc` project provides multiple libraries including emulated features, but we list only basic features with `libc.a` here.
 
 use super::{Send, Sync};
-
 pub use ffi::c_void;
 
 pub type c_char = i8;
@@ -43,6 +42,10 @@ pub type nfds_t = c_ulong;
 pub type wchar_t = i32;
 pub type nl_item = c_int;
 pub type __wasi_rights_t = u64;
+pub type sa_family_t = c_ushort;
+pub type socklen_t = c_uint;
+pub type in_port_t = c_ushort;
+pub type in_addr_t = c_uint;
 
 s_no_extra_traits! {
     #[repr(align(16))]
@@ -178,6 +181,96 @@ s! {
         pub st_ctim: timespec,
         __reserved: [c_longlong; 3],
     }
+
+    #[repr(align(4))]
+    pub struct msghdr {
+        pub msg_name: *mut ::c_uchar,
+        pub msg_namelen: ::socklen_t,
+        pub msg_iov: *mut ::iovec,
+        pub msg_iovlen: size_t,
+        pub msg_control: *mut ::c_void,
+        pub msg_controllen: ::socklen_t,
+        pub msg_flags: ::c_int,
+    }
+
+    pub struct in_addr {
+        pub s_addr: ::in_addr_t,
+    }
+
+    #[repr(align(4))]
+    pub struct in6_addr {
+        pub s6_addr: [u8; 16],
+    }
+
+    pub struct sockaddr {
+        pub sa_family: sa_family_t,
+        pub sa_data: [::c_char; 14],
+    }
+
+    pub struct sockaddr_in {
+        pub sin_family: sa_family_t,
+        pub sin_port: ::in_port_t,
+        pub sin_addr: ::in_addr,
+        pub sin_zero: [u8; 8],
+    }
+
+    pub struct sockaddr_un {
+        pub sun_family: sa_family_t,
+        pub sun_path: [::c_char; 108],
+    }
+
+    pub struct sockaddr_in6 {
+        pub sin6_family: sa_family_t,
+        pub sin6_port: ::in_port_t,
+        pub sin6_flowinfo: u32,
+        pub sin6_addr: ::in6_addr,
+        pub sin6_scope_id: u32,
+    }
+
+    pub struct sockaddr_storage {
+        pub ss_family: sa_family_t,
+        __ss_align: ::size_t,
+        __ss_pad2: [u8; 128 - 2 * 4],
+    }
+
+    pub struct ip_mreq_source {
+        pub imr_multiaddr: ::in_addr,
+        pub imr_interface: ::in_addr,
+        pub imr_sourceaddr: ::in_addr,
+    }
+
+    pub struct ip_mreq {
+        pub imr_multiaddr: ::in_addr,
+        pub imr_interface: ::in_addr,
+    }
+
+    pub struct ip_mreqn {
+        pub imr_multiaddr: ::in_addr,
+        pub imr_address: ::in_addr,
+        pub imr_ifindex: ::c_int,
+    }
+
+    pub struct ipv6_mreq {
+        pub ipv6mr_multiaddr: ::in6_addr,
+        pub ipv6mr_interface: ::c_uint,
+    }
+
+    pub struct linger {
+        pub l_onoff: c_int,
+        pub l_linger: c_int,
+    }
+
+    pub struct sock_filter {
+        pub code: ::c_ushort,
+        pub jt: ::c_uchar,
+        pub jf: ::c_uchar,
+        pub k: ::c_uint,
+    }
+
+    pub struct sock_fprog {
+        pub len: ::c_ushort,
+        pub filter: *mut sock_filter,
+    }
 }
 
 // Declare dirent outside of s! so that it doesn't implement Copy, Eq, Hash,
@@ -194,6 +287,9 @@ pub struct dirent {
     pub d_name: [c_char; 0],
 }
 
+pub const __WASI_SDFLAGS_RD: c_int = 1;
+pub const __WASI_SDFLAGS_WR: c_int = 2;
+
 pub const EXIT_SUCCESS: c_int = 0;
 pub const EXIT_FAILURE: c_int = 1;
 pub const STDIN_FILENO: c_int = 0;
@@ -209,6 +305,7 @@ pub const F_GETFD: c_int = 1;
 pub const F_SETFD: c_int = 2;
 pub const F_GETFL: c_int = 3;
 pub const F_SETFL: c_int = 4;
+pub const F_DUPFD_CLOEXEC: c_int = 6;
 pub const FD_CLOEXEC: c_int = 1;
 pub const FD_SETSIZE: c_int = 1024;
 pub const O_APPEND: c_int = 0x0001;
@@ -376,6 +473,10 @@ pub static CLOCK_REALTIME: clockid_t = unsafe { clockid_t(ptr_addr_of!(_CLOCK_RE
 pub static CLOCK_THREAD_CPUTIME_ID: clockid_t =
     unsafe { clockid_t(ptr_addr_of!(_CLOCK_THREAD_CPUTIME_ID)) };
 
+pub const MSG_OOB: ::c_int = 0x0001;
+pub const MSG_PEEK: ::c_int = 0x0002;
+pub const MSG_TRUNC: ::c_int = 0x0020;
+
 pub const ABDAY_1: ::nl_item = 0x20000;
 pub const ABDAY_2: ::nl_item = 0x20001;
 pub const ABDAY_3: ::nl_item = 0x20002;
@@ -440,6 +541,101 @@ pub const YESEXPR: ::nl_item = 0x50000;
 pub const NOEXPR: ::nl_item = 0x50001;
 pub const YESSTR: ::nl_item = 0x50002;
 pub const NOSTR: ::nl_item = 0x50003;
+
+pub const PF_UNSPEC: c_int = 0;
+pub const PF_LOCAL: c_int = 1;
+pub const PF_INET: c_int = 2;
+pub const PF_INET6: c_int = 10;
+
+pub const AF_UNSPEC: c_int = PF_UNSPEC;
+pub const AF_INET: c_int = PF_UNSPEC;
+pub const AF_INET6: c_int = PF_INET6;
+pub const AF_LOCAL: c_int = PF_LOCAL;
+pub const AF_UNIX: c_int = AF_LOCAL;
+
+pub const IF_NAMESIZE: uintptr_t = 16;
+pub const IFNAMSIZ: uintptr_t = IF_NAMESIZE;
+
+pub const SOCK_STREAM: c_int = 1;
+pub const SOCK_DGRAM: c_int = 2;
+pub const SOCK_RAW: c_int = 3;
+pub const SOCK_RDM: c_int = 4;
+pub const SOCK_SEQPACKET: c_int = 5;
+pub const SOCK_DCCP: c_int = 6;
+pub const SOCK_PACKET: c_int = 10;
+pub const SOCK_NONBLOCK: c_int = 04000;
+pub const SOCK_CLOEXEC: c_int = 02000000;
+
+pub const IPPROTO_IP: c_int = 0;
+pub const IPPROTO_ICMP: c_int = 1;
+pub const IPPROTO_TCP: c_int = 6;
+pub const IPPROTO_UDP: c_int = 17;
+pub const IPPROTO_IPV6: c_int = 41;
+pub const IPPROTO_ICMPV6: c_int = 58;
+pub const IPPROTO_RAW: c_int = 255;
+
+pub const IP_TOS: c_int = 1;
+pub const IP_TTL: c_int = 2;
+pub const IP_HDRINCL: c_int = 3;
+pub const IP_RECVTOS: c_int = 13;
+pub const IP_FREEBIND: c_int = 15;
+pub const IP_MULTICAST_IF: c_int = 32;
+pub const IP_MULTICAST_LOOP: c_int = 34;
+pub const IP_MULTICAST_TTL: c_int = 33;
+pub const IP_ADD_MEMBERSHIP: c_int = 35;
+pub const IP_DROP_MEMBERSHIP: c_int = 36;
+pub const IP_ADD_SOURCE_MEMBERSHIP: c_int = 39;
+pub const IP_DROP_SOURCE_MEMBERSHIP: c_int = 40;
+
+pub const IPV6_UNICAST_HOPS: c_int = 16;
+pub const IPV6_MULTICAST_IF: c_int = 17;
+pub const IPV6_MULTICAST_HOPS: c_int = 18;
+pub const IPV6_MULTICAST_LOOP: c_int = 19;
+pub const IPV6_JOIN_GROUP: c_int = 20;
+pub const IPV6_LEAVE_GROUP: c_int = 21;
+pub const IPV6_V6ONLY: c_int = 26;
+pub const IPV6_ADD_MEMBERSHIP: c_int = IPV6_JOIN_GROUP;
+pub const IPV6_DROP_MEMBERSHIP: c_int = IPV6_LEAVE_GROUP;
+pub const IPV6_RECVTCLASS: c_int = 66;
+pub const IPV6_FREEBIND: c_int = 78;
+
+pub const TCP_NODELAY: c_int = 1;
+pub const TCP_MAXSEG: c_int = 2;
+pub const TCP_CORK: c_int = 3;
+pub const TCP_KEEPIDLE: c_int = 4;
+pub const TCP_KEEPINTVL: c_int = 5;
+pub const TCP_KEEPCNT: c_int = 6;
+pub const TCP_QUICKACK: c_int = 12;
+pub const TCP_THIN_LINEAR_TIMEOUTS: c_int = 16;
+pub const TCP_USER_TIMEOUT: c_int = 18;
+
+pub const SO_MARK: c_int = 0;
+pub const SO_REUSEADDR: c_int = 2;
+pub const SO_TYPE: c_int = 3;
+pub const SO_ERROR: c_int = 4;
+pub const SO_BROADCAST: c_int = 6;
+pub const SO_SNDBUF: c_int = 7;
+pub const SO_RCVBUF: c_int = 8;
+pub const SO_KEEPALIVE: c_int = 9;
+pub const SO_OOBINLINE: c_int = 10;
+pub const SO_LINGER: c_int = 13;
+pub const SO_REUSEPORT: c_int = 15;
+pub const SO_RCVTIMEO: c_int = 20;
+pub const SO_SNDTIMEO: c_int = 21;
+pub const SO_BINDTODEVICE: c_int = 25;
+pub const SO_ATTACH_FILTER: c_int = 26;
+pub const SO_DETACH_FILTER: c_int = 27;
+pub const SO_ACCEPTCONN: c_int = 30;
+pub const SO_PROTOCOL: c_int = 38;
+pub const SO_INCOMING_CPU: c_int = 49;
+
+pub const SOL_IP: c_int = 0;
+pub const SOL_SOCKET: c_int = 1;
+pub const SOL_IPV6: c_int = 41;
+
+pub const SHUT_RD: ::c_int = __WASI_SDFLAGS_RD;
+pub const SHUT_WR: ::c_int = __WASI_SDFLAGS_WR;
+pub const SHUT_RDWR: ::c_int = SHUT_RD | SHUT_WR;
 
 #[cfg_attr(
     feature = "rustc-dep-of-std",
@@ -735,6 +931,60 @@ extern "C" {
 
     pub fn nl_langinfo(item: ::nl_item) -> *mut ::c_char;
     pub fn nl_langinfo_l(item: ::nl_item, loc: ::locale_t) -> *mut ::c_char;
+
+    pub fn accept(fd: ::c_int, addr: *mut sockaddr, len: *mut socklen_t) -> ::c_int;
+    pub fn accept4(
+        fd: ::c_int,
+        addr: *mut sockaddr,
+        len: *mut socklen_t,
+        flags: ::c_int,
+    ) -> ::c_int;
+    pub fn bind(fd: ::c_int, addr: *const ::sockaddr, len: ::socklen_t) -> ::c_int;
+    pub fn connect(fd: ::c_int, addr: *const sockaddr, len: socklen_t) -> ::c_int;
+    pub fn getpeername(fd: ::c_int, addr: *mut sockaddr, len: *mut socklen_t) -> ::c_int;
+    pub fn getsockname(fd: ::c_int, addr: *mut sockaddr, len: *mut socklen_t) -> ::c_int;
+    pub fn getsockopt(
+        fd: ::c_int,
+        level: ::c_int,
+        option_name: ::c_int,
+        option_value: *mut ::c_void,
+        option_len: *mut ::socklen_t,
+    ) -> ::c_int;
+    pub fn listen(fd: ::c_int, backlog: ::c_int) -> ::c_int;
+    pub fn recvfrom(
+        fd: ::c_int,
+        buf: *mut ::c_void,
+        len: ::size_t,
+        flags: ::c_int,
+        addr: *mut ::sockaddr,
+        addrlen: *mut ::socklen_t,
+    ) -> ::ssize_t;
+    pub fn recvmsg(fd: ::c_int, msg: *mut ::msghdr, flags: ::c_int) -> ::ssize_t;
+    pub fn sendfile(fd: ::c_int, in_fd: ::c_int, ofs: *const ::off_t, count: ::size_t)
+        -> ::ssize_t;
+    pub fn sendmsg(fd: ::c_int, msg: *const ::msghdr, flags: ::c_int) -> ::ssize_t;
+    pub fn sendto(
+        fd: ::c_int,
+        buffer: *const ::c_void,
+        length: ::size_t,
+        flags: ::c_int,
+        addr: *const sockaddr,
+        addrlen: socklen_t,
+    ) -> ::ssize_t;
+    pub fn setsockopt(
+        fd: ::c_int,
+        level: ::c_int,
+        option_name: ::c_int,
+        option_value: *const ::c_void,
+        option_len: socklen_t,
+    ) -> ::c_int;
+    pub fn socket(fd: ::c_int, ty: ::c_int, protocol: ::c_int) -> ::c_int;
+    pub fn socketpair(
+        domain: ::c_int,
+        ty: ::c_int,
+        protocol: ::c_int,
+        socket_vector: *mut ::c_int,
+    ) -> ::c_int;
 
     pub fn __wasilibc_register_preopened_fd(fd: c_int, path: *const c_char) -> c_int;
     pub fn __wasilibc_fd_renumber(fd: c_int, newfd: c_int) -> c_int;
